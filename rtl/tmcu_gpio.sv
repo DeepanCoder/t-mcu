@@ -28,30 +28,30 @@ module tmcu_gpio (
 
     // APB Read & Write Logic
     always_ff @(posedge clk or negedge rst_n) begin
-        if (!rst_n) begin
-            prdata   <= 0;
-            pready   <= 0;
-            gpio_out <= 0;
-            gpio_dir <= 0;
-        end else if (psel && penable) begin
-            pready <= 1; // Transaction complete
-            
-            if (pwrite) begin
-                case (paddr[3:0])
-                    4'h0: gpio_out <= pwdata;  // Write to GPIO output register
-                    4'h4: gpio_dir <= pwdata;  // Write to GPIO direction register
-                    default: ; // No action
-                endcase
-            end else begin
-                case (paddr[3:0])
-                    4'h0: prdata <= gpio_pins; // Read GPIO pin values
-                    4'h4: prdata <= gpio_dir;  // Read GPIO direction
-                    default: prdata <= 32'h0;
-                endcase
-            end
+    if (!rst_n) begin
+        prdata   <= 0;
+        pready   <= 0;
+        gpio_out <= 0;
+        gpio_dir <= 0;
+    end else if (psel && penable) begin
+        pready <= 1; // Transaction complete
+
+        if (pwrite) begin
+            case (paddr[3:0])
+                4'h0: gpio_out <= pwdata;  // Write GPIO output register
+                4'h4: gpio_dir <= pwdata;  // Write GPIO direction register
+                default: ;
+            endcase
         end else begin
-            pready <= 0; // No transaction
+            case (paddr[3:0])
+                4'h0: prdata <= gpio_pins; // Read actual GPIO pin values
+                4'h4: prdata <= gpio_dir;  // Read GPIO direction
+                default: prdata <= 32'h0;
+            endcase
         end
+    end else begin
+        pready <= 0; // No transaction
+    end
     end
 
 endmodule
