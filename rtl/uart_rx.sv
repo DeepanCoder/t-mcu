@@ -27,7 +27,7 @@ module uart_rx (
                 shift_reg <= {rx, shift_reg[7:1]};
                 bit_count <= bit_count + 1;
                 baud_count <= 0;
-                if (bit_count == 8) begin
+                if (bit_count == 9) begin
                     rx_valid <= 1;
                     rx_data <= shift_reg;
                     receiving <= 0;
