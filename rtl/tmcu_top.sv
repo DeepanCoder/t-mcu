@@ -1,61 +1,82 @@
 module tmcu_top (
     input  logic        clk,
     input  logic        rst_n,
-    output logic [31:0] gpio_out,
-    input  logic [31:0] gpio_in,
+    
+    // UART signals
     input  logic        uart_rx,
-    output logic        uart_tx
+    output logic        uart_tx,
+    
+    // GPIO signals
+    inout  logic [7:0]  gpio
 );
 
-    // AHB Interconnect Signals
-    logic [31:0] ahb_addr;
-    logic [31:0] ahb_wdata;
-    logic [31:0] ahb_rdata;
-    logic        ahb_write;
-    logic        ahb_read;
+    // External parameter file will provide addresses
+    extern parameter logic [31:0] UART_BASE_ADDR;
+    extern parameter logic [31:0] GPIO_BASE_ADDR;
 
-    // Instantiate CV32E40P Core
+    // AHB signals
+    logic [31:0] ahb_haddr, ahb_hwdata, ahb_hrdata;
+    logic        ahb_hsel, ahb_hwrite, ahb_hready;
+    logic [1:0]  ahb_htrans;
+    logic [3:0]  ahb_hsize;
+
+    // APB signals
+    logic [31:0] apb_paddr, apb_pwdata, apb_prdata;
+    logic        apb_psel, apb_penable, apb_pwrite, apb_pready;
+
+    // Instantiate CPU Core
     cv32e40p_core u_cpu (
-        .clk      (clk),
-        .rst_n    (rst_n),
-        .ahb_addr (ahb_addr),
-        .ahb_wdata(ahb_wdata),
-        .ahb_rdata(ahb_rdata),
-        .ahb_write(ahb_write),
-        .ahb_read (ahb_read)
+        .clk_i(clk),
+        .rst_ni(rst_n),
+        .ahb_haddr_o(ahb_haddr),
+        .ahb_hwdata_o(ahb_hwdata),
+        .ahb_hrdata_i(ahb_hrdata),
+        .ahb_hsel_o(ahb_hsel),
+        .ahb_hwrite_o(ahb_hwrite),
+        .ahb_hready_o(ahb_hready),
+        .ahb_htrans_o(ahb_htrans),
+        .ahb_hsize_o(ahb_hsize)
     );
 
-    // Instantiate ROM
-    tmcu_rom u_rom (
-        .clk   (clk),
-        .addr  (ahb_addr),
-        .rdata (ahb_rdata)
-    );
-
-    // Instantiate SRAM
-    tmcu_sram u_sram (
-        .clk    (clk),
-        .addr   (ahb_addr),
-        .wdata  (ahb_wdata),
-        .rdata  (ahb_rdata),
-        .write  (ahb_write),
-        .read   (ahb_read)
-    );
-
-    // Instantiate GPIO
-    tmcu_gpio u_gpio (
-        .clk     (clk),
-        .rst_n   (rst_n),
-        .gpio_in (gpio_in),
-        .gpio_out(gpio_out)
+    // Instantiate AHB-to-APB Bridge
+    ahb_apb_bridge u_ahb_apb (
+        .clk(clk),
+        .rst_n(rst_n),
+        .hsel(ahb_hsel),
+        .haddr(ahb_haddr),
+        .hwrite(ahb_hwrite),
+        .hwdata(ahb_hwdata),
+        .htrans(ahb_htrans),
+        .hsize(ahb_hsize),
+        .hrdata(ahb_hrdata),
+        .hready(ahb_hready),
+        .psel(apb_psel),
+        .paddr(apb_paddr),
+        .penable(apb_penable),
+        .pwrite(apb_pwrite),
+        .pwdata(apb_pwdata),
+        .prdata(apb_prdata),
+        .pready(apb_pready)
     );
 
     // Instantiate UART
     tmcu_uart u_uart (
-        .clk    (clk),
-        .rst_n  (rst_n),
-        .rx     (uart_rx),
-        .tx     (uart_tx)
+        .clk(clk),
+        .rst_n(rst_n),
+        .tx_start(apb_psel && (apb_paddr == UART_BASE_ADDR) && apb_pwrite),
+        .tx_data(apb_pwdata[7:0]),
+        .tx_ready(),
+        .tx(uart_tx),
+        .rx(uart_rx),
+        .rx_valid(),
+        .rx_data()
+    );
+
+    // Instantiate GPIO
+    tmcu_gpio u_gpio (
+        .clk(clk),
+        .rst_n(rst_n),
+        .gpio(gpio)
     );
 
 endmodule
