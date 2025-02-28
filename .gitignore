@@ -1,0 +1,27 @@
+# Ignore common Verilog/SystemVerilog generated files
+*.log
+*.out
+*.vcd
+*.wlf
+*.syn
+*.sdf
+*.vvp
+*.fsdb
+*.ucdb
+
+# Ignore temporary files
+*.tmp
+*.bak
+*.swp
+
+# Ignore compiled firmware files
+firmware/*.o
+firmware/*.bin
+firmware/*.hex
+firmware/*.elf
+firmware/*.map
+firmware/*.lst
+
+# Ignore simulation and synthesis results
+sim_build/
+synth_build/
