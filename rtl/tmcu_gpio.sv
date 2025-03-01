@@ -52,6 +52,6 @@ module tmcu_gpio (
     end else begin
         pready <= 0; // No transaction
     end
-    end
+end
 
 endmodule
